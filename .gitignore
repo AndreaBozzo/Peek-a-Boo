@@ -11,3 +11,5 @@ __pycache__/
 secrets.conf
 *.conf
 
+# mypy cache
+.mypy_cache/
