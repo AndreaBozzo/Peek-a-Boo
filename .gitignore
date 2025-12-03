@@ -7,3 +7,7 @@ env/
 __pycache__/
 *.py[cod]
 
+# Test/demo files with secrets
+secrets.conf
+*.conf
+
