@@ -54,9 +54,9 @@ def read_head_tail(filepath: str) -> str:
     except Exception as e:
         return f"Errore lettura: {str(e)}"
 
-def search_content(filepath: str, keyword: str) -> str:
+def search_content_with_context(filepath: str, keyword: str, context: int = 2) -> str:
     """
-    Grep simulato: cerca keyword e restituisce la riga + numero riga.
+    Cerca una keyword e restituisce la riga + N righe di contesto prima e dopo.
     """
     if not os.path.exists(filepath):
         return "Errore: File non trovato."
@@ -64,11 +64,18 @@ def search_content(filepath: str, keyword: str) -> str:
     matches = []
     try:
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
-            for i, line in enumerate(f):
-                if keyword.lower() in line.lower():
-                    clean = line.strip()[:200] # Max 200 char per riga
-                    matches.append(f"Riga {i+1}: {clean}")
-                    if len(matches) >= 5: break
+            lines = f.readlines() # Leggiamo in memoria (ok per file testo normali)
+            
+        for i, line in enumerate(lines):
+            if keyword.lower() in line.lower():
+                # Calcola inizio e fine del contesto
+                start = max(0, i - context)
+                end = min(len(lines), i + context + 1)
+                
+                snippet = "".join(lines[start:end])
+                matches.append(f"--- Match at line {i+1} ---\n{snippet}\n")
+                
+                if len(matches) >= 3: break # Max 3 match
         
         if not matches:
             return "Nessuna occorrenza trovata."
@@ -91,7 +98,7 @@ peek_tools = [
     ),
     Tool(
         name="GrepSearch",
-        func=search_content,
+        func=search_content_with_context,
         description="Cerca stringhe (password, key, error) nel file senza leggerlo tutto. Input: filepath, keyword."
     )
 ]
