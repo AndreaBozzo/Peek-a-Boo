@@ -1,6 +1,10 @@
-# Peek-a-Boo Agent
+<div align="center">
+  <img src="docs/assets/images/logo.png" alt="Peek-a-Boo Logo" width="300"/>
 
-Agente AI minimalista che estrae informazioni da file usando operazioni chirurgiche per minimizzare l'uso di token.
+  # Peek-a-Boo Agent
+
+  Agente AI minimalista che estrae informazioni da file usando operazioni chirurgiche per minimizzare l'uso di token.
+</div>
 
 ## Setup
 
