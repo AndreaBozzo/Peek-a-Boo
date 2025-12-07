@@ -34,6 +34,12 @@ The test suite offers 4 missions:
 3. **Find API endpoint** - Configuration discovery
 4. **Find all credentials** - Security audit
 
+### Example Run
+
+Below is a screenshot of the agent running one of the missions to find credentials within the test project.
+
+![Peek-a-Boo in action](./docs/assets/images/peek-a-boo-in-action.png)
+
 ## Philosophy
 
 The agent follows the "token saving" principle - it NEVER reads entire files unless strictly necessary.
