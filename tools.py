@@ -1,107 +1,110 @@
 import os
 import re
 import fnmatch
-from datapizza.tools import Tool # type: ignore
+from datapizza.tools import Tool  # type: ignore
 
-# --- DEFINIZIONE FUNZIONI PYTHON ---
+# --- PYTHON FUNCTION DEFINITIONS ---
+
 
 def fast_list_files(directory: str = ".") -> str:
     """
-    Elenca i file nella directory ignorando cartelle pesanti (node_modules, venv).
-    Restituisce: Nome file e dimensione.
+    List files in directory, ignoring heavy folders (node_modules, venv).
+    Returns: filename and size.
     """
     output = []
     ignored = {'.git', 'node_modules', '__pycache__', 'venv', '.idea', '.vscode'}
-    
+
     try:
-        # Se l'input è vuoto, usa la directory corrente
         target_dir = directory if directory else "."
-        
+
         with os.scandir(target_dir) as entries:
             for entry in entries:
                 if entry.name in ignored:
                     continue
-                
+
                 if entry.is_file():
                     size_kb = entry.stat().st_size / 1024
                     output.append(f"[FILE] {entry.name} ({size_kb:.1f}KB)")
                 elif entry.is_dir():
                     output.append(f"[DIR]  {entry.name}/")
-        
+
         if not output:
-            return "Directory vuota."
-        return "\n".join(output[:30]) # Tronchiamo per sicurezza
+            return "Empty directory."
+        return "\n".join(output[:30])  # Truncate for safety
     except Exception as e:
-        return f"Errore accesso directory: {str(e)}"
+        return f"Error accessing directory: {str(e)}"
+
 
 def read_head_tail(filepath: str) -> str:
     """
-    Legge le prime 5 e ultime 5 righe.
+    Read first 5 and last 5 lines of a file.
     """
     if not os.path.exists(filepath):
-        return "Errore: File non trovato."
-    
+        return "Error: File not found."
+
     try:
-        if os.path.getsize(filepath) > 50 * 1024 * 1024: # > 50MB
-            return "File troppo grande (>50MB). Usa 'GrepSearch' o leggi parzialmente."
+        if os.path.getsize(filepath) > 50 * 1024 * 1024:  # > 50MB
+            return "File too large (>50MB). Use 'GrepSearch' or read partially."
 
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
-            
+
         if len(lines) <= 10:
             return "".join(lines)
-        
+
         preview = "".join(lines[:5]) + "\n... [SKIP] ...\n" + "".join(lines[-5:])
         return preview
     except Exception as e:
-        return f"Errore lettura: {str(e)}"
+        return f"Error reading file: {str(e)}"
+
 
 def search_content_with_context(filepath: str, keyword: str, context: int = 2, use_regex: bool = False) -> str:
     """
-    Cerca una keyword (o regex) e restituisce la riga + N righe di contesto prima e dopo.
+    Search for a keyword (or regex) and return the line + N lines of context before/after.
     """
     if not os.path.exists(filepath):
-        return "Errore: File non trovato."
+        return "Error: File not found."
 
     matches = []
     try:
-        # Compila regex se richiesto
+        # Compile regex if requested
         if use_regex:
             try:
                 pattern = re.compile(keyword, re.IGNORECASE)
             except re.error as e:
-                return f"Errore regex invalida: {str(e)}"
+                return f"Error: Invalid regex: {str(e)}"
 
         with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
 
         for i, line in enumerate(lines):
-            # Match con regex o string
+            # Match with regex or string
             if use_regex:
-                match = pattern.search(line)
+                found = pattern.search(line) is not None
             else:
-                match = keyword.lower() in line.lower()
+                found = keyword.lower() in line.lower()
 
-            if match:
+            if found:
                 start = max(0, i - context)
                 end = min(len(lines), i + context + 1)
 
                 snippet = "".join(lines[start:end])
                 matches.append(f"--- Match at line {i+1} ---\n{snippet}\n")
 
-                if len(matches) >= 3: break
+                if len(matches) >= 3:
+                    break
 
         if not matches:
-            return "Nessuna occorrenza trovata."
+            return "No matches found."
         return "\n".join(matches)
     except Exception as e:
-        return f"Errore ricerca: {str(e)}"
+        return f"Error searching: {str(e)}"
 
 
 def find_files(directory: str = ".", pattern: str = "*", max_results: int = 20) -> str:
     """
-    Cerca file ricorsivamente per glob pattern (es. *.env, *secret*, *.py).
-    Ignora cartelle pesanti.
+    Search files recursively by glob pattern (e.g. *.env, *secret*, *.py).
+    Ignores heavy directories.
     """
     ignored_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.idea', '.vscode'}
     results = []
@@ -110,19 +113,19 @@ def find_files(directory: str = ".", pattern: str = "*", max_results: int = 20) 
         target_dir = directory if directory else "."
 
         for root, dirs, files in os.walk(target_dir):
-            # Filtra directory da ignorare (modifica in-place per os.walk)
+            # Filter directories to ignore (in-place modification for os.walk)
             dirs[:] = [d for d in dirs if d not in ignored_dirs]
 
             for filename in files:
-                # Matcha pattern normale + pattern per dotfiles (*.env -> anche .env*)
+                # Match normal pattern + dotfile pattern (*.env -> also .env*)
                 matches_pattern = fnmatch.fnmatch(filename, pattern)
-                # Se pattern è tipo "*.env", prova anche "*env*" per dotfiles come .env.production
+                # If pattern is like "*.env", also try "*env*" for dotfiles like .env.production
                 if not matches_pattern and pattern.startswith("*"):
-                    dotfile_pattern = f"*{pattern[1:]}*"  # *.env -> *env* (cattura .env.production)
+                    dotfile_pattern = f"*{pattern[1:]}*"  # *.env -> *env* (catches .env.production)
                     matches_pattern = fnmatch.fnmatch(filename, dotfile_pattern)
                 if matches_pattern:
                     filepath = os.path.join(root, filename)
-                    # Path relativo per output più pulito
+                    # Relative path for cleaner output
                     rel_path = os.path.relpath(filepath, target_dir)
                     try:
                         size_kb = os.path.getsize(filepath) / 1024
@@ -131,21 +134,21 @@ def find_files(directory: str = ".", pattern: str = "*", max_results: int = 20) 
                         results.append(f"{rel_path} (size unknown)")
 
                     if len(results) >= max_results:
-                        results.append(f"... (troncato a {max_results} risultati)")
+                        results.append(f"... (truncated to {max_results} results)")
                         return "\n".join(results)
 
         if not results:
-            return f"Nessun file trovato per pattern '{pattern}'."
+            return f"No files found for pattern '{pattern}'."
         return "\n".join(results)
     except Exception as e:
-        return f"Errore ricerca file: {str(e)}"
+        return f"Error searching files: {str(e)}"
 
 
 def grep_recursive(directory: str, keyword: str, pattern: str = "*", context: int = 1,
                    use_regex: bool = False, max_files: int = 10, max_matches: int = 5) -> str:
     """
-    Cerca una keyword in tutti i file di una directory (ricorsivo).
-    Supporta filtro per pattern glob e regex opzionale.
+    Search for a keyword in all files of a directory (recursive).
+    Supports glob pattern filter and optional regex.
     """
     ignored_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.idea', '.vscode'}
     binary_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip',
@@ -158,37 +161,37 @@ def grep_recursive(directory: str, keyword: str, pattern: str = "*", context: in
     try:
         target_dir = directory if directory else "."
 
-        # Compila regex se richiesto
+        # Compile regex if requested
         if use_regex:
             try:
                 regex_pattern = re.compile(keyword, re.IGNORECASE)
             except re.error as e:
-                return f"Errore regex invalida: {str(e)}"
+                return f"Error: Invalid regex: {str(e)}"
 
         for root, dirs, files in os.walk(target_dir):
             dirs[:] = [d for d in dirs if d not in ignored_dirs]
 
             for filename in files:
-                # Salta file binari
+                # Skip binary files
                 _, ext = os.path.splitext(filename)
                 if ext.lower() in binary_extensions:
                     continue
 
-                # Filtra per pattern
+                # Filter by pattern
                 if not fnmatch.fnmatch(filename, pattern):
                     continue
 
                 filepath = os.path.join(root, filename)
                 rel_path = os.path.relpath(filepath, target_dir)
 
-                # Salta file troppo grandi (>1MB)
+                # Skip files too large (>1MB)
                 try:
                     if os.path.getsize(filepath) > 1 * 1024 * 1024:
                         continue
                 except OSError:
                     continue
 
-                # Cerca nel file
+                # Search in file
                 try:
                     with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                         lines = f.readlines()
@@ -198,17 +201,17 @@ def grep_recursive(directory: str, keyword: str, pattern: str = "*", context: in
                 file_matches = []
                 for i, line in enumerate(lines):
                     if use_regex:
-                        match = regex_pattern.search(line)
+                        found = regex_pattern.search(line) is not None
                     else:
-                        match = keyword.lower() in line.lower()
+                        found = keyword.lower() in line.lower()
 
-                    if match:
+                    if found:
                         start = max(0, i - context)
                         end = min(len(lines), i + context + 1)
                         snippet = "".join(lines[start:end]).rstrip()
                         file_matches.append(f"  L{i+1}: {snippet}")
 
-                        if len(file_matches) >= 2:  # Max 2 match per file
+                        if len(file_matches) >= 2:  # Max 2 matches per file
                             break
 
                 if file_matches:
@@ -217,43 +220,44 @@ def grep_recursive(directory: str, keyword: str, pattern: str = "*", context: in
                     files_searched += 1
 
                     if files_searched >= max_files or total_matches >= max_matches:
-                        results.append(f"\n... (troncato: {files_searched} file, {total_matches} match)")
+                        results.append(f"\n... (truncated: {files_searched} files, {total_matches} matches)")
                         return "\n\n".join(results)
 
         if not results:
-            return f"Nessuna occorrenza di '{keyword}' trovata."
+            return f"No occurrences of '{keyword}' found."
 
-        summary = f"\n--- Trovati {total_matches} match in {files_searched} file ---"
+        summary = f"\n--- Found {total_matches} matches in {files_searched} files ---"
         return "\n\n".join(results) + summary
     except Exception as e:
-        return f"Errore grep ricorsivo: {str(e)}"
+        return f"Error in recursive grep: {str(e)}"
 
-# --- ESPORTAZIONE TOOLS PER DATAPIZZA ---
+
+# --- TOOL EXPORT FOR DATAPIZZA ---
 
 peek_tools = [
     Tool(
         name="ListFiles",
         func=fast_list_files,
-        description="USALO PER PRIMO. Mostra i file nella cartella (non ricorsivo). Input: path (default '.')."
+        description="USE THIS FIRST. Shows files in folder (non-recursive). Input: path (default '.')."
     ),
     Tool(
         name="FindFiles",
         func=find_files,
-        description="Cerca file RICORSIVAMENTE per pattern glob (es. '*.env', '*secret*', '*.py'). Input: directory, pattern, max_results."
+        description="Search files RECURSIVELY by glob pattern (e.g. '*.env', '*secret*', '*.py'). Input: directory, pattern, max_results."
     ),
     Tool(
         name="ReadPreview",
         func=read_head_tail,
-        description="Leggi inizio/fine file per capire formato/struttura. Input: filepath."
+        description="Read start/end of file to understand format/structure. Input: filepath."
     ),
     Tool(
         name="GrepSearch",
         func=search_content_with_context,
-        description="Cerca keyword/regex in UN file. Input: filepath, keyword, context (default 2), use_regex (default False)."
+        description="Search keyword/regex in ONE file. Input: filepath, keyword, context (default 2), use_regex (default False)."
     ),
     Tool(
         name="GrepRecursive",
         func=grep_recursive,
-        description="Cerca keyword/regex in TUTTI i file di una directory. Input: directory, keyword, pattern (glob filter), context, use_regex, max_files, max_matches."
+        description="Search keyword/regex in ALL files of a directory. Input: directory, keyword, pattern (glob filter), context, use_regex, max_files, max_matches."
     )
 ]

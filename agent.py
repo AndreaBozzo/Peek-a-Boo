@@ -2,55 +2,55 @@ import os
 from dotenv import load_dotenv
 from datapizza.agents import Agent  # type: ignore
 from datapizza.clients import ClientFactory  # type: ignore
-from tools import peek_tools # Importiamo i tool dal file separato
+from tools import peek_tools
 
-# Carica variabili d'ambiente
+# Load environment variables
 load_dotenv()
+
 
 def get_peek_agent():
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
-        raise ValueError("Manca GOOGLE_API_KEY nel file .env")
+        raise ValueError("Missing GOOGLE_API_KEY in .env file")
 
-    # 1. Prompt di Sistema "Tirchio"
+    # 1. "Frugal" System Prompt
     system_instruction = """
-    Sei l'Agente Peek-a-Boo. Il tuo credo è il risparmio di token.
-    NON leggere MAI un file intero se non strettamente necessario.
+    You are the Peek-a-Boo Agent. Your creed is token saving.
+    NEVER read an entire file unless strictly necessary.
 
-    Procedura operativa standard:
-    1. ListFiles -> Orientati nella directory corrente.
-    2. FindFiles -> Cerca file per pattern (*.env, *secret*, *.py) in tutto l'albero.
-    3. ReadPreview -> Capisci la struttura dei file interessanti (head+tail).
-    4. GrepSearch -> Cerca keyword in UN file specifico.
-    5. GrepRecursive -> Cerca keyword in TUTTI i file di una directory.
+    Standard operating procedure:
+    1. ListFiles -> Orient yourself in the current directory.
+    2. FindFiles -> Search for files by pattern (*.env, *secret*, *.py) across the tree.
+    3. ReadPreview -> Understand the structure of interesting files (head+tail).
+    4. GrepSearch -> Search keyword in ONE specific file.
+    5. GrepRecursive -> Search keyword in ALL files of a directory.
 
-    Strategia chirurgica:
-    - Se cerchi un tipo di file (es. config): usa FindFiles con pattern.
-    - Se cerchi una keyword in un file noto: usa GrepSearch.
-    - Se cerchi una keyword ma non sai dove sia: usa GrepRecursive.
-    - Supporto REGEX: passa use_regex=True per pattern complessi (es. "sk_live_[0-9]+").
+    Surgical strategy:
+    - Looking for a file type (e.g. config): use FindFiles with pattern.
+    - Looking for a keyword in a known file: use GrepSearch.
+    - Looking for a keyword but don't know where: use GrepRecursive.
+    - REGEX support: pass use_regex=True for complex patterns (e.g. "sk_live_[0-9]+").
 
-    Esempio: "trova la Stripe API key"
+    Example: "find the Stripe API key"
     -> GrepRecursive(directory=".", keyword="sk_live_", pattern="*.env")
-    NON leggere file interi!
+    DO NOT read entire files!
     """
 
-    # 2. Configurazione Client per Google Gemini
-    # Datapizza gestirà la connessione alle API Gemini
+    # 2. Client Configuration for Google Gemini
     client = ClientFactory.create(
         provider="google",
         api_key=api_key,
-        model="gemini-2.0-flash-exp", # Modello veloce ed economico, perfetto per i tool
+        model="gemini-2.0-flash-exp",  # Fast and economical, perfect for tools
         system_prompt=system_instruction,
-        temperature=0.0 # Vogliamo precisione, non creatività
+        temperature=0.0  # We want precision, not creativity
     )
 
-    # 3. Creazione Agente
+    # 3. Agent Creation
     agent = Agent(
         name="Minimalist Auditor",
         client=client,
         tools=peek_tools,
         system_prompt=system_instruction
     )
-    
+
     return agent

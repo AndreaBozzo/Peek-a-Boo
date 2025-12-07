@@ -3,7 +3,7 @@
 
   # Peek-a-Boo Agent
 
-  Agente AI minimalista che estrae informazioni da file usando operazioni chirurgiche per minimizzare l'uso di token.
+  A minimalist AI agent that extracts information from files using surgical operations to minimize token usage.
 </div>
 
 ## Setup
@@ -11,76 +11,85 @@
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install datapizza-ai datapizza-ai-clients-google python-dotenv
+pip install -r requirements.txt
 ```
 
-## Configurazione
+## Configuration
 
-Crea un file `.env` con la tua API key di Google:
+Create a `.env` file with your Google API key:
 
 ```
 GOOGLE_API_KEY=your_api_key_here
 ```
 
-## Utilizzo
+## Usage
 
 ```bash
 python3 main.py
 ```
 
-Il test suite offre 4 missioni:
-1. **Trova Stripe API Key** - Cerca credenziali nascoste
-2. **Trova TODO/FIXME** - Code review automatica
-3. **Trova endpoint API** - Discovery configurazioni
-4. **Trova tutte le credenziali** - Security audit
+The test suite offers 4 missions:
+1. **Find Stripe API Key** - Search for hidden credentials
+2. **Find TODO/FIXME** - Automated code review
+3. **Find API endpoint** - Configuration discovery
+4. **Find all credentials** - Security audit
 
-## Filosofia
+## Philosophy
 
-L'agente segue il principio del "risparmio di token" - NON legge mai file interi se non strettamente necessario.
+The agent follows the "token saving" principle - it NEVER reads entire files unless strictly necessary.
 
-### Tool Disponibili
+### Available Tools
 
-| Tool | Funzione | Use Case |
+| Tool | Function | Use Case |
 |------|----------|----------|
-| **ListFiles** | Elenca file in una directory (non ricorsivo) | Orientamento iniziale |
-| **FindFiles** | Cerca file per glob pattern (`*.env`, `*secret*`) ricorsivamente | Trovare tipi di file specifici |
-| **ReadPreview** | Mostra prime 5 + ultime 5 righe | Capire struttura file |
-| **GrepSearch** | Cerca keyword in UN file con contesto | Estrazione chirurgica |
-| **GrepRecursive** | Cerca keyword in TUTTI i file di una directory | Ricerca globale |
+| **ListFiles** | List files in a directory (non-recursive) | Initial orientation |
+| **FindFiles** | Search files by glob pattern (`*.env`, `*secret*`) recursively | Find specific file types |
+| **ReadPreview** | Show first 5 + last 5 lines | Understand file structure |
+| **GrepSearch** | Search keyword in ONE file with context | Surgical extraction |
+| **GrepRecursive** | Search keyword in ALL files of a directory | Global search |
 
-### Strategia Chirurgica
+### Surgical Strategy
 
 ```
-Se cerchi un TIPO di file    → FindFiles con pattern
-Se cerchi una KEYWORD nota   → GrepSearch su file specifico
-Se cerchi una KEYWORD ignota → GrepRecursive su directory
+Looking for a FILE TYPE    → FindFiles with pattern
+Looking for a KNOWN KEYWORD → GrepSearch on specific file
+Looking for an UNKNOWN KEYWORD → GrepRecursive on directory
 ```
 
-### Supporto Regex
+### Regex Support
 
-Tutti i tool di ricerca supportano regex con `use_regex=True`:
+All search tools support regex with `use_regex=True`:
 ```python
 GrepRecursive(directory=".", keyword="sk_live_[0-9]+", use_regex=True)
 ```
 
-## Struttura Progetto
+## Project Structure
 
 ```
 Peek-a-Boo/
-├── agent.py      # Configurazione agente + system prompt
-├── tools.py      # 5 tool chirurgici
-├── main.py       # Test suite con 4 missioni
-├── .env          # API key (da creare)
-└── messy_project/  # Directory di test (generata automaticamente)
+├── agent.py        # Agent configuration + system prompt
+├── tools.py        # 5 surgical tools
+├── main.py         # Test suite with 4 missions
+├── .env            # API key (create this)
+└── messy_project/  # Test directory (auto-generated)
 ```
 
-## Limiti di Sicurezza
+## Safety Limits
 
-I tool hanno limiti integrati per evitare esplosioni di token:
-- **ListFiles**: max 30 entry
-- **FindFiles**: max 20 risultati
+Tools have built-in limits to prevent token explosions:
+- **ListFiles**: max 30 entries
+- **FindFiles**: max 20 results
 - **ReadPreview**: max 50MB per file
-- **GrepSearch**: max 3 match per file
-- **GrepRecursive**: max 10 file, max 5 match totali
+- **GrepSearch**: max 3 matches per file
+- **GrepRecursive**: max 10 files, max 5 total matches
 
-Directory ignorate automaticamente: `.git`, `node_modules`, `__pycache__`, `venv`, `.idea`, `.vscode`
+Automatically ignored directories: `.git`, `node_modules`, `__pycache__`, `venv`, `.idea`, `.vscode`
+
+## Built With
+
+- [Datapizza](https://github.com/datapizza/datapizza) - AI agent framework
+- [Google Gemini](https://ai.google.dev/) - LLM backend (`gemini-2.0-flash-exp` model)
+
+## License
+
+MIT
