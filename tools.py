@@ -114,7 +114,13 @@ def find_files(directory: str = ".", pattern: str = "*", max_results: int = 20) 
             dirs[:] = [d for d in dirs if d not in ignored_dirs]
 
             for filename in files:
-                if fnmatch.fnmatch(filename, pattern):
+                # Matcha pattern normale + pattern per dotfiles (*.env -> anche .env*)
+                matches_pattern = fnmatch.fnmatch(filename, pattern)
+                # Se pattern è tipo "*.env", prova anche "*env*" per dotfiles come .env.production
+                if not matches_pattern and pattern.startswith("*"):
+                    dotfile_pattern = f"*{pattern[1:]}*"  # *.env -> *env* (cattura .env.production)
+                    matches_pattern = fnmatch.fnmatch(filename, dotfile_pattern)
+                if matches_pattern:
                     filepath = os.path.join(root, filename)
                     # Path relativo per output più pulito
                     rel_path = os.path.relpath(filepath, target_dir)
