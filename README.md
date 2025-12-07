@@ -93,7 +93,7 @@ Automatically ignored directories: `.git`, `node_modules`, `__pycache__`, `venv`
 
 ## Built With
 
-- [Datapizza](https://github.com/datapizza/datapizza) - AI agent framework
+- [Datapizza](https://github.com/datapizza-labs/datapizza-ai) - AI agent framework
 - [Google Gemini](https://ai.google.dev/) - LLM backend (`gemini-2.0-flash-exp` model)
 
 ## License
