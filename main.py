@@ -1,7 +1,11 @@
 # main.py - Peek-a-Boo Test Suite
 import os
 import shutil
+import time
 from agent import get_peek_agent
+
+# Delay between missions to avoid rate limiting (seconds)
+MISSION_DELAY = 15
 
 
 def create_labyrinth(base_dir: str = "messy_project"):
@@ -127,20 +131,30 @@ DO NOT read log files.""",
 ]
 
 
-def run_mission(agent, mission: dict):
-    """Execute a single mission."""
+def run_mission(agent, mission: dict, max_retries: int = 3):
+    """Execute a single mission with retry on rate limit."""
     print(f"\n{'='*60}")
     print(f"MISSION: {mission['name']}")
     print(f"{'='*60}")
     print(f"Prompt: {mission['prompt'][:100]}...")
 
-    try:
-        result = agent.run(mission["prompt"])
-        print(f"\nMission completed")
-        return True
-    except Exception as e:
-        print(f"\nError: {e}")
-        return False
+    for attempt in range(max_retries):
+        try:
+            agent.run(mission["prompt"])
+            print("\nMission completed")
+            return True
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                wait_time = (attempt + 1) * 20  # 20s, 40s, 60s
+                print(f"\nRate limited. Waiting {wait_time}s before retry ({attempt + 1}/{max_retries})...")
+                time.sleep(wait_time)
+            else:
+                print(f"\nError: {e}")
+                return False
+
+    print(f"\nFailed after {max_retries} retries")
+    return False
 
 
 def main():
@@ -162,9 +176,12 @@ def main():
         choice = input("\nChoose mission (0-4) [default: 1]: ").strip() or "1"
 
         if choice == "0":
-            # Run all
-            for mission in MISSIONS:
+            # Run all with delay between missions
+            for i, mission in enumerate(MISSIONS):
                 run_mission(agent, mission)
+                if i < len(MISSIONS) - 1:
+                    print(f"\nWaiting {MISSION_DELAY}s before next mission...")
+                    time.sleep(MISSION_DELAY)
         else:
             # Run single
             idx = int(choice) - 1
