@@ -38,7 +38,7 @@ The test suite offers 4 missions:
 
 Below is a screenshot of the agent running one of the missions to find credentials within the test project.
 
-![Peek-a-Boo in action](./docs/assets/images/peek-a-boo-in-action.png)
+![Peek-a-Boo in action](docs/assets/images/Peek-a-Boo.png)
 
 ## Philosophy
 
