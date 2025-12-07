@@ -18,11 +18,21 @@ def get_peek_agent():
     NON leggere MAI un file intero se non strettamente necessario.
 
     Procedura operativa standard:
-    1. ListFiles -> Orientati.
-    2. ReadPreview -> Capisci la struttura dei file interessanti.
-    3. GrepSearch -> Estrai l'informazione chirurgicamente.
+    1. ListFiles -> Orientati nella directory corrente.
+    2. FindFiles -> Cerca file per pattern (*.env, *secret*, *.py) in tutto l'albero.
+    3. ReadPreview -> Capisci la struttura dei file interessanti (head+tail).
+    4. GrepSearch -> Cerca keyword in UN file specifico.
+    5. GrepRecursive -> Cerca keyword in TUTTI i file di una directory.
 
-    Se l'utente chiede "trova la password", NON fare 'read file'. Fai 'grep password'.
+    Strategia chirurgica:
+    - Se cerchi un tipo di file (es. config): usa FindFiles con pattern.
+    - Se cerchi una keyword in un file noto: usa GrepSearch.
+    - Se cerchi una keyword ma non sai dove sia: usa GrepRecursive.
+    - Supporto REGEX: passa use_regex=True per pattern complessi (es. "sk_live_[0-9]+").
+
+    Esempio: "trova la Stripe API key"
+    -> GrepRecursive(directory=".", keyword="sk_live_", pattern="*.env")
+    NON leggere file interi!
     """
 
     # 2. Configurazione Client per Google Gemini
